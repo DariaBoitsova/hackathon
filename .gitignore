@@ -1,1 +1,19 @@
+# Зависимости
+node_modules/
+
+# Файлы окружения (с API-ключами)
+.env
+.env.local
+.env.*.local
+
+# Логи и временные файлы
+*.log
+.DS_Store
+dist/
+dist-ssr/
+*.local
+
+# Результаты сборки
+build/
+coverage/
 .vercel
