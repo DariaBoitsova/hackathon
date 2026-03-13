@@ -112,6 +112,58 @@ function Reveal({ children, delay = 0 }) {
   );
 }
 
+const BoyReading = ({ size = 300, reading = false }) => (
+  <svg width={size} height={size} viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label={reading ? "Мальчик читает кредитный договор" : "Мальчик изучает кредитный договор"}>
+    <ellipse cx="100" cy="200" rx="45" ry="12" fill="#000" opacity="0.12"/>
+    <rect x="84" y="162" width="13" height="36" rx="6.5" fill="#2C5F4A"/>
+    <rect x="103" y="162" width="13" height="36" rx="6.5" fill="#2C5F4A"/>
+    <rect x="72" y="108" width="56" height="60" rx="14" fill="#3D7A5E"/>
+    {reading ? (
+      <>
+        <rect x="50" y="112" width="26" height="11" rx="5.5" fill="#2C5F4A" transform="rotate(12 50 112)"/>
+        <rect x="124" y="112" width="26" height="11" rx="5.5" fill="#2C5F4A" transform="rotate(-12 150 112)"/>
+        <rect x="62" y="130" width="76" height="50" rx="7" fill="#F5F0E8"/>
+        <rect x="70" y="139" width="60" height="3" rx="1.5" fill="#1A3A2E" opacity="0.25"/>
+        <rect x="70" y="147" width="44" height="3" rx="1.5" fill="#1A3A2E" opacity="0.25"/>
+        <rect x="70" y="155" width="52" height="3" rx="1.5" fill="#B23B3B" opacity="0.45"/>
+        <rect x="70" y="163" width="36" height="3" rx="1.5" fill="#1A3A2E" opacity="0.25"/>
+      </>
+    ) : (
+      <>
+        <rect x="52" y="122" width="24" height="11" rx="5.5" fill="#2C5F4A"/>
+        <rect x="124" y="122" width="24" height="11" rx="5.5" fill="#2C5F4A"/>
+        <rect x="60" y="112" width="80" height="58" rx="8" fill="#F5F0E8"/>
+        <rect x="68" y="122" width="64" height="3" rx="1.5" fill="#1A3A2E" opacity="0.2"/>
+        <rect x="68" y="130" width="48" height="3" rx="1.5" fill="#C97C3D" opacity="0.4"/>
+        <rect x="68" y="138" width="56" height="3" rx="1.5" fill="#1A3A2E" opacity="0.2"/>
+        <rect x="68" y="146" width="40" height="3" rx="1.5" fill="#B23B3B" opacity="0.35"/>
+        <rect x="68" y="154" width="52" height="3" rx="1.5" fill="#1A3A2E" opacity="0.2"/>
+      </>
+    )}
+    <rect x="91" y="90" width="18" height="20" rx="9" fill="#E8C9A0"/>
+    <ellipse cx="100" cy="74" rx="28" ry="30" fill="#E8C9A0"/>
+    <ellipse cx="100" cy="48" rx="29" ry="15" fill="#5C3D1E"/>
+    <ellipse cx="75" cy="64" rx="8" ry="11" fill="#5C3D1E"/>
+    <ellipse cx="125" cy="64" rx="8" ry="11" fill="#5C3D1E"/>
+    <ellipse cx="89" cy="74" rx="5" ry={reading ? "3.5" : "5"} fill="#2C1A0E"/>
+    <ellipse cx="111" cy="74" rx="5" ry={reading ? "3.5" : "5"} fill="#2C1A0E"/>
+    <circle cx="91" cy="73" r="1.5" fill="white"/>
+    <circle cx="113" cy="73" r="1.5" fill="white"/>
+    <path d={reading ? "M92 84 Q100 87 108 84" : "M92 84 Q100 90 108 84"} stroke="#8B5A2B" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    {reading && (
+      <>
+        <circle cx="89" cy="74" r="7" stroke="#5C3D1E" strokeWidth="1.5" fill="none"/>
+        <circle cx="111" cy="74" r="7" stroke="#5C3D1E" strokeWidth="1.5" fill="none"/>
+        <line x1="96" y1="74" x2="104" y2="74" stroke="#5C3D1E" strokeWidth="1.5"/>
+        <line x1="73" y1="73" x2="82" y2="74" stroke="#5C3D1E" strokeWidth="1.5"/>
+        <line x1="118" y1="74" x2="127" y2="73" stroke="#5C3D1E" strokeWidth="1.5"/>
+        <circle cx="40" cy="88" r="3" fill="#F0E6D5" opacity="0.5"/>
+        <circle cx="160" cy="82" r="2" fill="#F0E6D5" opacity="0.45"/>
+      </>
+    )}
+  </svg>
+);
+
 function loadStorage(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -244,60 +296,93 @@ async function readFileAsText(file, onOcrProgress) {
 
 function buildPrompt(text, mode = "analyze") {
   if (mode === "analyze") {
-    return [
-      {
-        role: "system",
-        content: `Ты финансовый аналитик. Проанализируй кредитный договор и верни ТОЛЬКО JSON в формате:
+  return [
+    {
+      role: "system",
+      content: `Ты — эксперт по финансовым договорам и защите прав потребителей. 
+Твоя задача — анализировать кредитные договоры и объяснять их содержание простым языком без юридических терминов.
+
+Отвечай ТОЛЬКО в формате JSON (без markdown, без \`\`\`json):
 {
-  "verdict": "ОПАСНО|ОСТОРОЖНО|НОРМАЛЬНО",
-  "reason": "краткая причина",
-  "amount": число,
-  "term": число,
-  "rate": число,
-  "monthlyPayment": число,
-  "hiddenFees": [
-    { "name": "комиссия", "amount": число, "level": "high|medium|low" }
+  "summary": "краткое резюме договора 2-3 предложения",
+  "real_rate": "реальная полная стоимость кредита (ПСК) в % годовых если указана, иначе 'не указана'",
+  "loan_amount": "сумма кредита",
+  "term": "срок кредита",
+  "monthly_payment": "ежемесячный платёж если указан",
+  "hidden_fees": [
+    { "name": "название комиссии/платежа", "amount": "сумма или %", "danger": "high|medium|low", "explanation": "объяснение простым языком" }
   ],
-  "traps": [ "ловушка1", "ловушка2" ],
-  "pros": [ "плюс1", "плюс2" ],
-  "recommendations": [ "рекомендация1" ]
-}
-Если данных нет, используй null или пустой массив. Только JSON, без пояснений.`,
-      },
-      { role: "user", content: text.slice(0, 30000) }
-    ];
-  }
-  if (mode === "compare") {
-    return [
-      {
-        role: "system",
-        content: `Ты финансовый аналитик. Сравни несколько кредитных предложений. Верни JSON с массивом results, где для каждого входного текста (в том же порядке) объект:
-{
-  "score": число 1-10,
+  "traps": [
+    { "title": "название ловушки", "danger": "high|medium|low", "description": "что это значит для заёмщика простым языком" }
+  ],
+  "positive": [ "что хорошего в договоре" ],
   "verdict": "ОПАСНО|ОСТОРОЖНО|НОРМАЛЬНО",
-  "summary": "кратко",
-  "amount": число,
-  "term": число,
-  "rate": число,
-  "monthlyPayment": число,
-  "hiddenFeesTotal": число,
-  "pros": [ "плюс1" ],
-  "cons": [ "минус1" ]
+  "verdict_reason": "почему такой вердикт, 1-2 предложения",
+  "recommendations": [ "конкретная рекомендация заёмщику" ]
+}`,
+    },
+    { role: "user", content: text.slice(0, 30000) }
+  ];
 }
-Только JSON.`,
-      },
-      { role: "user", content: text.slice(0, 30000) }
-    ];
-  }
+  if (mode === "compare") {
+  return [
+    {
+      role: "system",
+      content: `Ты финансовый аналитик. Проанализируй несколько кредитных предложений, которые будут приведены ниже. Каждое предложение отделено разделителем "---". Для каждого предложения верни JSON-объект с подробными характеристиками. Итоговый ответ должен быть JSON-массивом объектов, где каждый объект соответствует одному предложению в том же порядке, в котором они приведены.
+
+Формат объекта для каждого предложения:
+{
+  "name": "название предложения (если не указано, используй 'Предложение N')",
+  "loan_amount": "сумма кредита",
+  "term": "срок в месяцах",
+  "real_rate": "ПСК или ставка в % годовых",
+  "monthly_payment": "ежемесячный платёж",
+  "total_overpayment": "общая переплата или 'не указана'",
+  "hidden_fees_count": число (количество скрытых комиссий),
+  "hidden_fees_total": "общая сумма скрытых комиссий или описание",
+  "hidden_fees": [{ "name": "название", "amount": "сумма или %", "danger": "high|medium|low" }],
+  "traps_count": число,
+  "biggest_trap": "самая опасная ловушка одним предложением или 'нет критичных'",
+  "verdict": "ОПАСНО|ОСТОРОЖНО|НОРМАЛЬНО",
+  "verdict_reason": "почему такой вердикт, 1-2 предложения",
+  "score": число от 1 до 10,
+  "recommendation": "брать или не брать — коротко и честно одним предложением"
+}
+
+Только JSON, без пояснений.`,
+    },
+    { role: "user", content: text.slice(0, 30000) }
+  ];
+}
   return [];
 }
 
 function parseJSONSafe(raw) {
-  try {
-    return JSON.parse(sanitizeAIResponse(raw));
-  } catch {
-    return null;
-  }
+    if (!raw) return null;
+    let cleaned = raw.replace(/```json|```/g, '').trim();
+    // Пытаемся найти JSON объект или массив в строке
+    const firstObj = cleaned.indexOf('{');
+    const lastObj = cleaned.lastIndexOf('}');
+    const firstArr = cleaned.indexOf('[');
+    const lastArr = cleaned.lastIndexOf(']');
+
+    if (firstObj !== -1 && lastObj > firstObj) {
+        const candidate = cleaned.substring(firstObj, lastObj + 1);
+        try {
+            return JSON.parse(candidate);
+        } catch (e) { }
+    }
+    if (firstArr !== -1 && lastArr > firstArr) {
+        const candidate = cleaned.substring(firstArr, lastArr + 1);
+        try {
+            return JSON.parse(candidate);
+        } catch (e) { }
+    }
+    try {
+        return JSON.parse(cleaned);
+    } catch {
+        return null;
+    }
 }
 
 function AuthModal({ isOpen, onClose, onLogin }) {
@@ -656,15 +741,7 @@ function Hero() {
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <svg width="280" height="280" viewBox="0 0 100 100" style={{ filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.2))" }}>
-            <circle cx="50" cy="40" r="20" fill={C.darkGreen} opacity="0.1" />
-            <circle cx="50" cy="38" r="18" fill={C.heroBg} />
-            <circle cx="38" cy="35" r="2.5" fill={C.darkGreen} />
-            <circle cx="62" cy="35" r="2.5" fill={C.darkGreen} />
-            <path d="M40 50 Q50 60, 60 50" stroke={C.darkGreen} strokeWidth="3" fill="none" strokeLinecap="round" />
-            <rect x="30" y="65" width="40" height="20" rx="4" fill={C.darkGreen} opacity="0.2" />
-            <rect x="35" y="68" width="30" height="4" rx="2" fill={C.darkGreen} />
-          </svg>
+          <BoyReading reading={false} size={280} />
         </div>
       </div>
     </Reveal>
@@ -798,15 +875,7 @@ function FileUpload({ onFileSelect, onTextChange, text, error, analyzing }) {
 function LoadingScreen({ isOcr, ocrProgress, pageInfo }) {
   return (
     <div style={{ textAlign: "center", padding: "20px 20px 80px", animation: "fadeInUp 0.4s" }}>
-      <svg width="170" height="170" viewBox="0 0 100 100" style={{ margin: "0 auto 24px" }}>
-        <circle cx="50" cy="40" r="20" fill={C.darkGreen} opacity="0.1" />
-        <circle cx="50" cy="38" r="18" fill={C.heroBg} />
-        <circle cx="38" cy="35" r="2.5" fill={C.darkGreen} />
-        <circle cx="62" cy="35" r="2.5" fill={C.darkGreen} />
-        <rect x="30" y="45" width="40" height="25" rx="4" fill={C.darkGreen} opacity="0.15" />
-        <circle cx="50" cy="55" r="3" fill={C.darkGreen} />
-        <line x1="35" y1="70" x2="65" y2="70" stroke={C.darkGreen} strokeWidth="3" strokeLinecap="round" />
-      </svg>
+      <BoyReading reading={true} size={170} />
       <h2 style={{ fontSize: isOcr ? 28 : 32, fontWeight: 700, color: C.textLight, marginBottom: 12 }}>
         {isOcr ? "Распознаю текст (OCR)..." : "Читаю договор..."}
       </h2>
@@ -842,7 +911,7 @@ function VerdictCard({ analysis, onToggleDetails, showDetails, onDownloadPdf }) 
         <span style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(0,0,0,0.25)" }} />
         <span style={{ fontSize: 40, fontWeight: 700, color: C.white }}>{analysis.verdict}</span>
       </div>
-      <p style={{ fontSize: 20, color: C.white, opacity: 0.9, marginBottom: 24 }}>{analysis.reason}</p>
+      <p style={{ fontSize: 20, color: C.white, opacity: 0.9, marginBottom: 24 }}>{analysis.verdict_reason}</p>
       <div style={{ display: "flex", gap: 16 }}>
         <button
           onClick={onToggleDetails}
@@ -875,38 +944,46 @@ function VerdictCard({ analysis, onToggleDetails, showDetails, onDownloadPdf }) 
 }
 
 function AccordionDetails({ analysis }) {
+  const DANGER_MAP = {
+    high: { color: C.danger, label: "Опасно" },
+    medium: { color: C.warning, label: "Внимание" },
+    low: { color: C.success, label: "Ок" },
+  };
+
   return (
-    <div style={{
-      maxHeight: 6000, overflow: "hidden", transition: "max-height 0.45s ease-in-out"
-    }}>
+    <div style={{ maxHeight: 6000, overflow: "hidden", transition: "max-height 0.45s ease-in-out" }}>
       <div style={{ background: C.cardBg, borderRadius: 24, padding: 36, marginTop: 16 }}>
         <h3 style={{ fontSize: 22, fontWeight: 700, color: C.darkGreen, marginBottom: 24 }}>Параметры кредита</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
           {[
-            { label: "Сумма", value: analysis.amount },
+            { label: "Сумма кредита", value: analysis.loan_amount },
             { label: "Срок (мес)", value: analysis.term },
-            { label: "Ставка %", value: analysis.rate },
-            { label: "Платёж", value: analysis.monthlyPayment }
+            { label: "Реальная ставка", value: analysis.real_rate },
+            { label: "Платёж в месяц", value: analysis.monthly_payment },
           ].map((item, i) => (
             <div key={i} style={{ background: C.white, borderRadius: 16, padding: 20, boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
               <div style={{ fontSize: 14, color: C.textMuted, marginBottom: 8 }}>{item.label}</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: C.darkGreen }}>
-                {item.value ?? "—"}
-              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: C.darkGreen }}>{item.value ?? "—"}</div>
             </div>
           ))}
         </div>
 
-        {analysis.hiddenFees?.length > 0 && (
+        <p style={{ fontSize: 15, color: C.textMuted, lineHeight: 1.7, marginBottom: 28 }}>{analysis.summary}</p>
+
+        {analysis.hidden_fees?.length > 0 && (
           <>
             <div style={{ height: 1, background: "rgba(26,58,46,0.1)", margin: "28px 0" }} />
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: C.darkGreen, marginBottom: 16 }}>Скрытые комиссии</h3>
-            {analysis.hiddenFees.map((fee, idx) => (
-              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: idx < analysis.hiddenFees.length - 1 ? "1px solid rgba(26,58,46,0.08)" : "none" }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: fee.level === "high" ? C.danger : fee.level === "medium" ? C.warning : C.success }} />
-                <div style={{ flex: 1, fontSize: 16, fontWeight: 500, color: C.darkGreen }}>{fee.name}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: C.darkGreen }}>{fee.amount ?? ""}</div>
-                {fee.explanation && <div style={{ fontSize: 14, color: C.textMuted }}>{fee.explanation}</div>}
+            <h3 style={{ fontSize: 22, fontWeight: 700, color: C.darkGreen, marginBottom: 16 }}>Скрытые комиссии</h3>
+            {analysis.hidden_fees.map((fee, idx) => (
+              <div key={idx} style={{ display: "flex", gap: 16, padding: "14px 0", borderBottom: idx < analysis.hidden_fees.length - 1 ? "1px solid rgba(26,58,46,0.08)" : "none" }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: DANGER_MAP[fee.danger]?.color || C.textMuted, flexShrink: 0, marginTop: 6 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 16, fontWeight: 500, color: C.darkGreen }}>{fee.name}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: C.darkGreen }}>{fee.amount}</span>
+                  </div>
+                  {fee.explanation && <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.55 }}>{fee.explanation}</p>}
+                </div>
               </div>
             ))}
           </>
@@ -915,49 +992,48 @@ function AccordionDetails({ analysis }) {
         {analysis.traps?.length > 0 && (
           <>
             <div style={{ height: 1, background: "rgba(26,58,46,0.1)", margin: "28px 0" }} />
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: C.darkGreen, marginBottom: 16 }}>Ловушки</h3>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {analysis.traps.map((trap, idx) => (
-                <li key={idx} style={{ fontSize: 16, color: C.darkGreen, marginBottom: 8 }}>{trap}</li>
-              ))}
-            </ul>
+            <h3 style={{ fontSize: 22, fontWeight: 700, color: C.darkGreen, marginBottom: 16 }}>Ловушки в договоре</h3>
+            {analysis.traps.map((trap, idx) => (
+              <div key={idx} style={{ display: "flex", gap: 16, padding: "14px 0", borderBottom: idx < analysis.traps.length - 1 ? "1px solid rgba(26,58,46,0.08)" : "none" }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: DANGER_MAP[trap.danger]?.color || C.textMuted, flexShrink: 0, marginTop: 6 }} />
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 500, color: C.darkGreen, marginBottom: 5 }}>{trap.title}</div>
+                  <p style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.55 }}>{trap.description}</p>
+                </div>
+              </div>
+            ))}
           </>
         )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 28 }}>
-          <div style={{ background: C.cardBg, borderRadius: 20, padding: 28 }}>
-            <h4 style={{ fontSize: 18, fontWeight: 700, color: C.success, marginBottom: 16 }}>Что хорошего</h4>
-            {analysis.pros?.map((item, idx) => (
-              <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 12, fontSize: 15, color: C.textMuted }}>
-                <span style={{ color: C.success }}>✓</span> {item}
-              </div>
-            ))}
-          </div>
-          <div style={{ background: C.cardBg, borderRadius: 20, padding: 28 }}>
-            <h4 style={{ fontSize: 18, fontWeight: 700, color: C.danger, marginBottom: 16 }}>На что обратить внимание</h4>
-            {analysis.recommendations?.map((item, idx) => (
-              <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 12, fontSize: 15, color: C.textMuted }}>
-                <span style={{ color: C.danger }}>!</span> {item}
-              </div>
-            ))}
-          </div>
+          {analysis.positive?.length > 0 && (
+            <div style={{ background: C.cardBg, borderRadius: 20, padding: 28 }}>
+              <h4 style={{ fontSize: 18, fontWeight: 700, color: C.success, marginBottom: 16 }}>Что хорошего</h4>
+              {analysis.positive.map((item, idx) => (
+                <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 12, fontSize: 15, color: C.textMuted }}>
+                  <span style={{ color: C.success }}>✓</span> {item}
+                </div>
+              ))}
+            </div>
+          )}
+          {analysis.recommendations?.length > 0 && (
+            <div style={{ background: C.cardBg, borderRadius: 20, padding: 28 }}>
+              <h4 style={{ fontSize: 18, fontWeight: 700, color: C.danger, marginBottom: 16 }}>На что обратить внимание</h4>
+              {analysis.recommendations.map((item, idx) => (
+                <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 12, fontSize: 15, color: C.textMuted }}>
+                  <span style={{ color: C.danger }}>!</span> {item}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div style={{
-          marginTop: 32, background: "rgba(240,230,213,0.07)",
-          border: `1px solid ${C.border}`, borderRadius: 20,
-          padding: "24px 32px", display: "flex", alignItems: "center",
-          justifyContent: "space-between"
-        }}>
+        <div style={{ marginTop: 32, background: "rgba(240,230,213,0.07)", border: `1px solid ${C.border}`, borderRadius: 20, padding: "24px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: C.textLight }}>Остались вопросы?</div>
             <div style={{ fontSize: 14, opacity: 0.6, color: C.textLight }}>Спросите у ассистента</div>
           </div>
-          <button style={{
-            background: C.textLight, border: "none", borderRadius: 40,
-            padding: "12px 24px", color: C.darkGreen, fontSize: 14,
-            fontWeight: 700, cursor: "pointer"
-          }}>Спросить ассистента</button>
+          <button style={{ background: C.textLight, border: "none", borderRadius: 40, padding: "12px 24px", color: C.darkGreen, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Спросить ассистента</button>
         </div>
       </div>
     </div>
@@ -965,232 +1041,294 @@ function AccordionDetails({ analysis }) {
 }
 
 function ComparisonSection() {
-  const [offers, setOffers] = useState([{ id: 1, name: "Предложение 1", file: null, text: "", analyzing: false, result: null }]);
-  const [compareResults, setCompareResults] = useState(null);
-  const [loadingCompare, setLoadingCompare] = useState(false);
+    const [offers, setOffers] = useState([{ id: 1, name: "Предложение 1", file: null, text: "", analyzing: false, result: null }]);
+    const [compareResults, setCompareResults] = useState(null);
+    const [loadingCompare, setLoadingCompare] = useState(false);
+    const [compareError, setCompareError] = useState("");
 
-  const addOffer = () => {
-    if (offers.length < 4) {
-      setOffers([...offers, { id: offers.length + 1, name: `Предложение ${offers.length + 1}`, file: null, text: "", analyzing: false, result: null }]);
-    }
-  };
+    const addOffer = () => {
+        if (offers.length < 4) {
+            setOffers([...offers, { id: offers.length + 1, name: `Предложение ${offers.length + 1}`, file: null, text: "", analyzing: false, result: null }]);
+        }
+    };
 
-  const updateOffer = (id, data) => {
-    setOffers(prev => prev.map(o => o.id === id ? { ...o, ...data } : o));
-  };
+    const updateOffer = (id, data) => {
+        setOffers(prev => prev.map(o => o.id === id ? { ...o, ...data } : o));
+    };
 
-  const removeOffer = (id) => {
-    if (offers.length > 1) {
-      setOffers(prev => prev.filter(o => o.id !== id));
-    }
-  };
+    const removeOffer = (id) => {
+        if (offers.length > 1) {
+            setOffers(prev => prev.filter(o => o.id !== id));
+        }
+    };
 
-  const analyzeOffer = async (offer) => {
-    if (!offer.text && !offer.file) return;
-    updateOffer(offer.id, { analyzing: true });
-    try {
-      const text = offer.file ? await readFileAsText(offer.file) : offer.text;
-      const prompt = buildPrompt(text, "analyze");
-      const ai = await groqFetch(prompt, { maxTokens: 1500 });
-      const parsed = parseJSONSafe(ai?.choices?.[0]?.message?.content || "");
-      updateOffer(offer.id, { result: parsed, analyzing: false });
-    } catch {
-      updateOffer(offer.id, { analyzing: false });
-    }
-  };
+    const analyzeOffer = async (offer) => {
+        if (!offer.text && !offer.file) return;
+        updateOffer(offer.id, { analyzing: true });
+        try {
+            const text = offer.file ? await readFileAsText(offer.file) : offer.text;
+            const prompt = buildPrompt(text, "analyze");
+            const ai = await groqFetch(prompt, { maxTokens: 1500 });
+            const parsed = parseJSONSafe(ai?.choices?.[0]?.message?.content || "");
+            updateOffer(offer.id, { result: parsed, analyzing: false });
+        } catch {
+            updateOffer(offer.id, { analyzing: false });
+        }
+    };
 
-  const handleCompare = async () => {
-    const validOffers = offers.filter(o => o.text || o.file);
-    if (validOffers.length < 2) return;
-    setLoadingCompare(true);
-    try {
-      const texts = await Promise.all(validOffers.map(async o => {
-        if (o.file) return readFileAsText(o.file);
-        return o.text;
-      }));
-      const combined = texts.map((t, i) => `Предложение ${i+1}:\n${t}`).join("\n\n---\n\n");
-      const prompt = buildPrompt(combined, "compare");
-      const ai = await groqFetch(prompt, { maxTokens: 2000 });
-      const parsed = parseJSONSafe(ai?.choices?.[0]?.message?.content || "");
-      setCompareResults(parsed);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingCompare(false);
-    }
-  };
+    const handleCompare = async () => {
+        const validOffers = offers.filter(o => o.text || o.file);
+        if (validOffers.length < 2) return;
+        setLoadingCompare(true);
+        setCompareError("");
+        setCompareResults(null);
+        try {
+            const texts = await Promise.all(validOffers.map(async o => {
+                if (o.file) return readFileAsText(o.file);
+                return o.text;
+            }));
+            const combined = texts.map((t, i) => `Предложение ${i + 1}:\n${t}`).join("\n\n---\n\n");
+            const prompt = buildPrompt(combined, "compare");
+            const ai = await groqFetch(prompt, { maxTokens: 2000 });
+            const content = ai?.choices?.[0]?.message?.content || "";
+            console.log("Raw compare response:", content);
+            const parsed = parseJSONSafe(content);
+            console.log("Parsed compare response:", parsed);
 
-  return (
-    <Reveal>
-      <div style={{ padding: "80px 20px" }}>
-        <h2 style={{ fontSize: 32, fontWeight: 700, color: C.textLight, marginBottom: 8 }}>Сравнение предложений</h2>
-        <p style={{ fontSize: 16, color: C.textMuted, marginBottom: 32 }}>Загрузите до 4 договоров для сравнения</p>
+            let resultsArray = null;
+            if (parsed && Array.isArray(parsed)) {
+                resultsArray = parsed;
+            } else if (parsed && parsed.results && Array.isArray(parsed.results)) {
+                resultsArray = parsed.results;
+            } else {
+                throw new Error("Не удалось распознать ответ от ИИ");
+            }
 
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${offers.length}, 1fr)`, gap: 16 }}>
-          {offers.map((offer) => (
-            <div key={offer.id} style={{
-              background: "rgba(255,255,255,0.07)", border: `1px solid ${C.border}`,
-              borderRadius: 20, padding: 20
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <input
-                  type="text"
-                  value={offer.name}
-                  onChange={(e) => updateOffer(offer.id, { name: e.target.value })}
-                  style={{
-                    background: "transparent", border: "none", color: C.textLight,
-                    fontSize: 14, fontWeight: 700, outline: "none", width: "70%"
-                  }}
-                />
-                {offers.length > 1 && (
-                  <button onClick={() => removeOffer(offer.id)} style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 18 }}>✕</button>
-                )}
-              </div>
+            if (resultsArray.length !== validOffers.length) {
+                console.warn(`Expected ${validOffers.length} results, got ${resultsArray.length}`);
+                if (resultsArray.length < validOffers.length) {
+                    resultsArray = [...resultsArray, ...Array(validOffers.length - resultsArray.length).fill(null)];
+                } else {
+                    resultsArray = resultsArray.slice(0, validOffers.length);
+                }
+            }
 
-              <div
-                style={{
-                  border: "1.5px dashed rgba(255,255,255,0.25)", borderRadius: 12,
-                  padding: "28px 12px", textAlign: "center", cursor: "pointer",
-                  transition: "border-color 0.2s"
-                }}
-                onClick={() => document.getElementById(`file-${offer.id}`).click()}
-                onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.5)"}
-                onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"}
-              >
-                <div style={{ fontSize: 24, marginBottom: 8 }}>📎</div>
-                <div style={{ fontSize: 12, color: C.textMuted }}>Выбрать файл</div>
-                <input
-                  id={`file-${offer.id}`}
-                  type="file"
-                  accept=".pdf,.docx,.txt,image/*"
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) updateOffer(offer.id, { file, text: "" });
-                  }}
-                />
-              </div>
+            const resultsWithIds = offers.map(offer => {
+                const idx = validOffers.findIndex(o => o.id === offer.id);
+                return idx >= 0 ? resultsArray[idx] : null;
+            });
+            setCompareResults(resultsWithIds);
+        } catch (e) {
+            console.error(e);
+            setCompareError(e.message || "Ошибка при сравнении");
+        } finally {
+            setLoadingCompare(false);
+        }
+    };
 
-              <textarea
-                value={offer.text}
-                onChange={(e) => updateOffer(offer.id, { text: e.target.value, file: null })}
-                placeholder="Или вставьте текст"
-                rows={4}
-                style={{
-                  width: "100%", marginTop: 12, padding: 8,
-                  background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`,
-                  borderRadius: 10, color: C.textLight, fontSize: 12,
-                  resize: "vertical", outline: "none"
-                }}
-              />
+    return (
+        <Reveal>
+            <div style={{ padding: "80px 20px" }}>
+                <h2 style={{ fontSize: 32, fontWeight: 700, color: C.textLight, marginBottom: 8 }}>Сравнение предложений</h2>
+                <p style={{ fontSize: 16, color: C.textMuted, marginBottom: 32 }}>Загрузите до 4 договоров для сравнения</p>
 
-              {offer.analyzing && (
-                <div style={{ marginTop: 12, fontSize: 14, color: C.textMuted, display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.2)", borderTopColor: C.textLight, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                  Анализ...
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${offers.length}, 1fr)`, gap: 16 }}>
+                    {offers.map((offer) => (
+                        <div key={offer.id} style={{
+                            background: "rgba(255,255,255,0.07)", border: `1px solid ${C.border}`,
+                            borderRadius: 20, padding: 20
+                        }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <input
+                                    type="text"
+                                    value={offer.name}
+                                    onChange={(e) => updateOffer(offer.id, { name: e.target.value })}
+                                    style={{
+                                        background: "transparent", border: "none", color: C.textLight,
+                                        fontSize: 14, fontWeight: 700, outline: "none", width: "70%"
+                                    }}
+                                />
+                                {offers.length > 1 && (
+                                    <button onClick={() => removeOffer(offer.id)} style={{ background: "none", border: "none", color: C.textMuted, cursor: "pointer", fontSize: 18 }}>✕</button>
+                                )}
+                            </div>
+
+                            <div
+                                style={{
+                                    border: "1.5px dashed rgba(255,255,255,0.25)", borderRadius: 12,
+                                    padding: "28px 12px", textAlign: "center", cursor: "pointer",
+                                    transition: "border-color 0.2s"
+                                }}
+                                onClick={() => document.getElementById(`file-${offer.id}`).click()}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.5)"}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"}
+                            >
+                                <div style={{ fontSize: 24, marginBottom: 8 }}>📎</div>
+                                <div style={{ fontSize: 12, color: C.textMuted }}>Выбрать файл</div>
+                                <input
+                                    id={`file-${offer.id}`}
+                                    type="file"
+                                    accept=".pdf,.docx,.txt,image/*"
+                                    style={{ display: "none" }}
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) updateOffer(offer.id, { file, text: "" });
+                                    }}
+                                />
+                            </div>
+
+                            {offer.file && (
+                                <div style={{
+                                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    background: "rgba(255,255,255,0.1)", borderRadius: 8,
+                                    padding: "8px 12px", marginTop: 8
+                                }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                                        <span style={{ fontSize: 14 }}>📎</span>
+                                        <span style={{ fontSize: 13, color: C.textLight, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
+                                            {offer.file.name}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateOffer(offer.id, { file: null, text: "" });
+                                        }}
+                                        style={{
+                                            background: "none", border: "none", color: C.textMuted,
+                                            fontSize: 16, cursor: "pointer", padding: "0 4px"
+                                        }}
+                                        title="Удалить файл"
+                                    >✕</button>
+                                </div>
+                            )}
+
+                            <textarea
+                                value={offer.text}
+                                onChange={(e) => updateOffer(offer.id, { text: e.target.value, file: null })}
+                                placeholder="Или вставьте текст"
+                                rows={4}
+                                style={{
+                                    width: "100%", marginTop: 12, padding: 8,
+                                    background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.15)`,
+                                    borderRadius: 10, color: C.textLight, fontSize: 12,
+                                    resize: "vertical", outline: "none"
+                                }}
+                            />
+
+                            {offer.analyzing && (
+                                <div style={{ marginTop: 12, fontSize: 14, color: C.textMuted, display: "flex", alignItems: "center", gap: 8 }}>
+                                    <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.2)", borderTopColor: C.textLight, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                                    Анализ...
+                                </div>
+                            )}
+
+                            {offer.result && (
+                                <div style={{ marginTop: 12, fontSize: 13, color: C.textLight }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: offer.result.verdict === "ОПАСНО" ? C.danger : offer.result.verdict === "ОСТОРОЖНО" ? C.warning : C.success }} />
+                                        {offer.result.verdict} (оценка {offer.result.score ?? "?"})
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {offers.length < 4 && (
+                        <button
+                            onClick={addOffer}
+                            style={{
+                                border: `2px dashed ${C.border}`, background: "rgba(255,255,255,0.05)",
+                                borderRadius: 20, minHeight: 120, display: "flex", alignItems: "center",
+                                justifyContent: "center", fontSize: 24, color: C.textMuted,
+                                cursor: "pointer", transition: "opacity 0.2s", borderStyle: "dashed"
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.opacity = 0.85; e.currentTarget.style.borderColor = C.textLight; }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.borderColor = C.border; }}
+                        >
+                            +
+                        </button>
+                    )}
                 </div>
-              )}
 
-              {offer.result && (
-                <div style={{ marginTop: 12, fontSize: 13, color: C.textLight }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: offer.result.verdict === "ОПАСНО" ? C.danger : offer.result.verdict === "ОСТОРОЖНО" ? C.warning : C.success }} />
-                    {offer.result.verdict} (оценка {offer.result.score ?? "?"})
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {offers.length < 4 && (
-            <button
-              onClick={addOffer}
-              style={{
-                border: `2px dashed ${C.border}`, background: "rgba(255,255,255,0.05)",
-                borderRadius: 20, minHeight: 120, display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: 24, color: C.textMuted,
-                cursor: "pointer", transition: "opacity 0.2s", borderStyle: "dashed"
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = 0.85; e.currentTarget.style.borderColor = C.textLight; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.borderColor = C.border; }}
-            >
-              +
-            </button>
-          )}
-        </div>
-
-        {offers.filter(o => o.text || o.file).length >= 2 && (
-          <div style={{ textAlign: "center", marginTop: 32 }}>
-            <button
-              onClick={handleCompare}
-              disabled={loadingCompare}
-              style={{
-                background: loadingCompare ? "rgba(240,230,213,0.2)" : C.textLight,
-                border: "none", borderRadius: 40, padding: "16px 40px",
-                fontSize: 16, fontWeight: 700, color: loadingCompare ? C.textMuted : C.darkGreen,
-                cursor: loadingCompare ? "default" : "pointer"
-              }}
-            >
-              {loadingCompare ? "Сравниваем..." : "Сравнить"}
-            </button>
-          </div>
-        )}
-
-        {compareResults && (
-          <div style={{ marginTop: 48, background: C.cardBg, borderRadius: 20, padding: 32 }}>
-            <h3 style={{ fontSize: 24, fontWeight: 700, color: C.darkGreen, marginBottom: 24 }}>Результаты сравнения</h3>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${offers.length}, 1fr)`, gap: 16, marginBottom: 32 }}>
-              {offers.map((offer, idx) => {
-                const res = compareResults?.results?.[idx];
-                if (!res) return null;
-                const isBest = res.score === Math.max(...(compareResults.results?.map(r => r.score) || []));
-                return (
-                  <div key={offer.id} style={{
-                    background: isBest ? "rgba(45,106,79,0.3)" : "rgba(255,255,255,0.06)",
-                    border: isBest ? `2px solid ${C.success}` : `1px solid ${C.border}`,
-                    borderRadius: 16, padding: 20, position: "relative"
-                  }}>
-                    {isBest && <span style={{ position: "absolute", top: -10, right: 10, background: C.success, color: C.white, fontSize: 12, fontWeight: 700, padding: "4px 8px", borderRadius: 20 }}>🏆 Лучшее</span>}
-                    <div style={{ fontSize: 20, fontWeight: 700, color: C.darkGreen, marginBottom: 8 }}>{offer.name}</div>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: C.darkGreen, marginBottom: 8 }}>{res.score}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: res.verdict === "ОПАСНО" ? C.danger : res.verdict === "ОСТОРОЖНО" ? C.warning : C.success }} />
-                      <span style={{ fontSize: 13, color: C.darkGreen }}>{res.verdict}</span>
+                {offers.filter(o => o.text || o.file).length >= 2 && (
+                    <div style={{ textAlign: "center", marginTop: 32 }}>
+                        <button
+                            onClick={handleCompare}
+                            disabled={loadingCompare}
+                            style={{
+                                background: loadingCompare ? "rgba(240,230,213,0.2)" : C.textLight,
+                                border: "none", borderRadius: 40, padding: "16px 40px",
+                                fontSize: 16, fontWeight: 700, color: loadingCompare ? C.textMuted : C.darkGreen,
+                                cursor: loadingCompare ? "default" : "pointer"
+                            }}
+                        >
+                            {loadingCompare ? "Сравниваем..." : "Сравнить"}
+                        </button>
                     </div>
-                    <div style={{ fontSize: 13, color: C.textMuted }}>{res.summary}</div>
-                  </div>
-                );
-              })}
+                )}
+
+                {compareError && (
+                    <div style={{ textAlign: "center", marginTop: 16, color: C.danger }}>
+                        {compareError}
+                    </div>
+                )}
+
+                {compareResults && (
+                    <div style={{ marginTop: 48, background: C.cardBg, borderRadius: 20, padding: 32 }}>
+                        <h3 style={{ fontSize: 24, fontWeight: 700, color: C.darkGreen, marginBottom: 24 }}>Результаты сравнения</h3>
+                        <div style={{ display: "grid", gridTemplateColumns: `repeat(${offers.length}, 1fr)`, gap: 16, marginBottom: 32 }}>
+                            {offers.map((offer, idx) => {
+                                const res = compareResults[idx];
+                                if (!res) return null;
+                                const allScores = compareResults.filter(r => r).map(r => r.score);
+                                const isBest = res.score === Math.max(...allScores);
+                                return (
+                                    <div key={offer.id} style={{
+                                        background: isBest ? "rgba(45,106,79,0.3)" : "rgba(255,255,255,0.06)",
+                                        border: isBest ? `2px solid ${C.success}` : `1px solid ${C.border}`,
+                                        borderRadius: 16, padding: 20, position: "relative"
+                                    }}>
+                                        {isBest && <span style={{ position: "absolute", top: -10, right: 10, background: C.success, color: C.white, fontSize: 12, fontWeight: 700, padding: "4px 8px", borderRadius: 20 }}>🏆 Лучшее</span>}
+                                        <div style={{ fontSize: 20, fontWeight: 700, color: C.darkGreen, marginBottom: 8 }}>{offer.name}</div>
+                                        <div style={{ fontSize: 28, fontWeight: 700, color: C.darkGreen, marginBottom: 8 }}>{res.score}</div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: res.verdict === "ОПАСНО" ? C.danger : res.verdict === "ОСТОРОЖНО" ? C.warning : C.success }} />
+                                            <span style={{ fontSize: 13, color: C.darkGreen }}>{res.verdict}</span>
+                                        </div>
+                                        <div style={{ fontSize: 13, color: C.textMuted }}>{res.summary}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                            <thead>
+                                <tr style={{ background: "rgba(26,58,46,0.05)" }}>
+                                    <th style={{ padding: 12, textAlign: "left", color: C.textMuted, fontWeight: 600 }}>Параметр</th>
+                                    {offers.map(o => <th key={o.id} style={{ padding: 12, textAlign: "left", color: C.darkGreen }}>{o.name}</th>)}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {["amount", "term", "rate", "monthlyPayment", "hiddenFeesTotal"].map((field, idx) => (
+                                    <tr key={field} style={{ background: idx % 2 === 0 ? "rgba(26,58,46,0.02)" : "transparent" }}>
+                                        <td style={{ padding: 12, fontWeight: 600, color: C.darkGreen }}>
+                                            {field === "amount" ? "Сумма" : field === "term" ? "Срок" : field === "rate" ? "Ставка" : field === "monthlyPayment" ? "Платёж" : "Скрытые комиссии"}
+                                        </td>
+                                        {offers.map((o, i) => {
+                                            const val = compareResults[i]?.[field];
+                                            return <td key={o.id} style={{ padding: 12, color: C.darkGreen }}>{val ?? "—"}</td>;
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
-
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: "rgba(26,58,46,0.05)" }}>
-                  <th style={{ padding: 12, textAlign: "left", color: C.textMuted, fontWeight: 600 }}>Параметр</th>
-                  {offers.map(o => <th key={o.id} style={{ padding: 12, textAlign: "left", color: C.darkGreen }}>{o.name}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {["amount", "term", "rate", "monthlyPayment", "hiddenFeesTotal"].map((field, idx) => (
-                  <tr key={field} style={{ background: idx % 2 === 0 ? "rgba(26,58,46,0.02)" : "transparent" }}>
-                    <td style={{ padding: 12, fontWeight: 600, color: C.darkGreen }}>
-                      {field === "amount" ? "Сумма" : field === "term" ? "Срок" : field === "rate" ? "Ставка" : field === "monthlyPayment" ? "Платёж" : "Скрытые комиссии"}
-                    </td>
-                    {offers.map((o, i) => {
-                      const val = compareResults?.results?.[i]?.[field];
-                      return <td key={o.id} style={{ padding: 12, color: C.darkGreen }}>{val ?? "—"}</td>;
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </Reveal>
-  );
+        </Reveal>
+    );
 }
-
 function ChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -1417,13 +1555,20 @@ export default function App() {
     setLoading(true);
     setAnalysis(null);
     try {
-      const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 2000 });
+      const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000 });
       const content = ai?.choices?.[0]?.message?.content || "";
       const parsed = parseJSONSafe(content) || {
         verdict: "ОСТОРОЖНО",
-        reason: "Не удалось распознать структуру",
-        amount: null, term: null, rate: null, monthlyPayment: null,
-        hiddenFees: [], traps: [], pros: [], recommendations: []
+        verdict_reason: "Не удалось распознать структуру",
+        loan_amount: null,
+        term: null,
+        real_rate: null,
+        monthly_payment: null,
+        summary: "",
+        hidden_fees: [],
+        traps: [],
+        positive: [],
+        recommendations: []
       };
       setAnalysis(parsed);
       const historyEntry = {
@@ -1432,7 +1577,7 @@ export default function App() {
         fileName: file?.name || "Текст",
         verdict: parsed.verdict,
         score: parsed.score || 0,
-        summary: parsed.reason
+        summary: parsed.verdict_reason
       };
       setHistory(prev => [historyEntry, ...prev].slice(0, 20));
     } catch (e) {
