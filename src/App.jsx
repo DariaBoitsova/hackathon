@@ -1802,55 +1802,101 @@ function Footer() {
     );
 }
 
-const downloadPdf = async (analysis) => {
+const downloadHtml = (analysis) => {
     if (!analysis) return;
 
-    try {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: linear-gradient(135deg, #9B7BFF, #6A4E9B);
-            color: white; padding: 12px 24px;
-            border-radius: 40px; z-index: 9999; font-weight: 600;
-            border: 2px solid #B8A0FF;
-        `;
-        toast.textContent = 'Генерируем файл...';
-        document.body.appendChild(toast);
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Анализ кредитного договора</title>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f5f0e8; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #1A3A2E; }
+        .verdict { font-size: 24px; font-weight: 700; padding: 10px; border-radius: 12px; color: white; }
+        .danger { background: #B23B3B; }
+        .warning { background: #C97C3D; }
+        .success { background: #2D6A4F; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .card { background: #f8f9fa; padding: 16px; border-radius: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Анализ кредитного договора</h1>
+        <div class="verdict ${analysis.verdict === 'ОПАСНО' ? 'danger' : analysis.verdict === 'ОСТОРОЖНО' ? 'warning' : 'success'}">
+            Вердикт: ${analysis.verdict}
+        </div>
+        <p><strong>Причина:</strong> ${analysis.verdict_reason}</p>
+        
+        <h2>Параметры кредита</h2>
+        <div class="grid">
+            <div class="card"><strong>Сумма:</strong> ${analysis.loan_amount || '—'}</div>
+            <div class="card"><strong>Срок:</strong> ${analysis.term || '—'} мес</div>
+            <div class="card"><strong>Ставка:</strong> ${analysis.real_rate || '—'}</div>
+            <div class="card"><strong>Платёж:</strong> ${analysis.monthly_payment || '—'}</div>
+        </div>
+        
+        <p><strong>Резюме:</strong> ${analysis.summary || '—'}</p>
+        
+        ${analysis.hidden_fees?.length ? `
+        <h2>Скрытые комиссии</h2>
+        <table>
+            <thead><tr><th>Название</th><th>Сумма</th><th>Опасность</th><th>Пояснение</th></tr></thead>
+            <tbody>
+                ${analysis.hidden_fees.map(fee => `
+                <tr>
+                    <td>${fee.name}</td>
+                    <td>${fee.amount}</td>
+                    <td>${fee.danger}</td>
+                    <td>${fee.explanation || ''}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+        ` : ''}
+        
+        ${analysis.traps?.length ? `
+        <h2>Ловушки</h2>
+        <table>
+            <thead><tr><th>Название</th><th>Опасность</th><th>Описание</th></tr></thead>
+            <tbody>
+                ${analysis.traps.map(trap => `
+                <tr>
+                    <td>${trap.title}</td>
+                    <td>${trap.danger}</td>
+                    <td>${trap.description}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+        ` : ''}
+        
+        ${analysis.positive?.length ? `
+        <h2>Что хорошего</h2>
+        <ul>${analysis.positive.map(p => `<li>${p}</li>`).join('')}</ul>
+        ` : ''}
+        
+        ${analysis.recommendations?.length ? `
+        <h2>Рекомендации</h2>
+        <ul>${analysis.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+        ` : ''}
+    </div>
+</body>
+</html>
+    `;
 
-        const response = await fetch('/api/generate-pdf', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ analysis }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Ошибка при генерации');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-
-        link.download = `analiz-kredita-${new Date().toISOString().slice(0, 10)}.html`;
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        document.body.removeChild(toast);
-
-    } catch (error) {
-        console.error('Download error:', error);
-        alert('Ошибка при скачивании: ' + error.message);
-
-        const toast = document.querySelector('div[style*="position: fixed; top: 20px;"]');
-        if (toast) document.body.removeChild(toast);
-    }
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analiz-${new Date().toISOString().slice(0, 10)}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 };
 
 export default function App() {
@@ -2019,7 +2065,7 @@ export default function App() {
                             analysis={analysis}
                             onToggleDetails={() => setShowDetails(!showDetails)}
                             showDetails={showDetails}
-                            onDownloadPdf={() => downloadPdf(analysis)}
+                            onDownloadPdf={() => downloadHtml(analysis)}
                         />
 
                         <AnalysisCharts analysis={analysis} />
