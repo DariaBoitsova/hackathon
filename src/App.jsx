@@ -1390,7 +1390,7 @@ function ComparisonSection() {
             }));
             const combined = texts.map((t, i) => `Предложение ${i + 1}:\n${t}`).join("\n\n---\n\n");
             const prompt = buildPrompt(combined, "compare");
-            const ai = await groqFetch(prompt, { maxTokens: 2000 });
+            const ai = await groqFetch(prompt, { maxTokens: 4000 });
             const content = ai?.choices?.[0]?.message?.content || "";
             console.log("Raw compare response:", content);
             const parsed = parseJSONSafe(content);
@@ -1414,9 +1414,23 @@ function ComparisonSection() {
                 }
             }
 
+            const mappedResults = resultsArray.map(item => {
+                if (!item) return null;
+                return {
+                    amount: item.loan_amount,
+                    term: item.term,
+                    rate: item.real_rate,
+                    monthlyPayment: item.monthly_payment,
+                    hiddenFeesTotal: item.hidden_fees_total,
+                    verdict: item.verdict,
+                    score: item.score,
+                    summary: item.verdict_reason
+                };
+            });
+
             const resultsWithIds = offers.map(offer => {
                 const idx = validOffers.findIndex(o => o.id === offer.id);
-                return idx >= 0 ? resultsArray[idx] : null;
+                return idx >= 0 ? mappedResults[idx] : null;
             });
             setCompareResults(resultsWithIds);
         } catch (e) {
