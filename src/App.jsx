@@ -1816,7 +1816,7 @@ function Footer() {
     );
 }
 
-const downloadHtml = (analysis) => {
+const downloadPdf = (analysis) => {
     if (!analysis) return;
 
     // Показываем уведомление
@@ -1837,8 +1837,7 @@ const downloadHtml = (analysis) => {
         return 'success';
     };
 
-    const htmlContent = `
-<!DOCTYPE html>
+    const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -1940,8 +1939,7 @@ const downloadHtml = (analysis) => {
         ` : ''}
     </div>
 </body>
-</html>
-    `;
+</html>`;
 
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -1953,7 +1951,6 @@ const downloadHtml = (analysis) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    // Убираем уведомление
     setTimeout(() => document.body.removeChild(toast), 1000);
 };
 
@@ -2123,7 +2120,7 @@ export default function App() {
                             analysis={analysis}
                             onToggleDetails={() => setShowDetails(!showDetails)}
                             showDetails={showDetails}
-                            onDownloadPdf={() => downloadHtml(analysis)}
+                            onDownloadPdf={() => downloadPdf(analysis)}
                         />
 
                         <AnalysisCharts analysis={analysis} />
