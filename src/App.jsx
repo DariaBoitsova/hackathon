@@ -1674,7 +1674,7 @@ function ChatAssistant() {
         try {
             const context = "";
             const ai = await groqFetch([
-                { role: "system", content: "Ты дружелюбный финансовый консультант. Отвечай кратко, по делу, без юридических советов. На русском." },
+                { role: "system", content: "Ты дружелюбный финансовый консультант. Отвечай кратко, по делу, без юридических советов. На русском. НЕ используй Markdown (символы #, *, _, ` и т.п.). Пиши обычным текстом." },
                 { role: "user", content: context + "\n\n" + input }
             ], { maxTokens: 800 });
             const answer = ai?.choices?.[0]?.message?.content || "Извините, не могу ответить сейчас.";
