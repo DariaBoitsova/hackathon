@@ -1,5 +1,6 @@
 
 # Читаю за тебя 📄🤖
+[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen?style=for-the-badge&logo=vercel)](https://hackathonap.vercel.app/)
 
 **AI-веб-приложение для умного анализа кредитных договоров на русском языке.**
 
@@ -8,6 +9,7 @@
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
 
 Приложение помогает разобраться в сложных кредитных документах: от выделения ключевых рисков до сравнения нескольких предложений.
+🔗 **Демо:** [hackathonap.vercel.app](https://hackathonap.vercel.app/) — попробуйте прямо сейчас!
 
 ## ✨ Возможности
 
