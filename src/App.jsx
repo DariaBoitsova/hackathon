@@ -1098,23 +1098,6 @@ function ComparisonSection() {
             let resultsArray = null;
             if (parsed && Array.isArray(parsed)) {
                 resultsArray = parsed;
-                const mappedResults = resultsArray.map(item => ({
-                  amount: item.loan_amount,
-                  term: item.term,
-                  rate: item.real_rate,
-                  monthlyPayment: item.monthly_payment,
-                  hiddenFeesTotal: item.hidden_fees_total,
-                  verdict: item.verdict,
-                  score: item.score,
-                  summary: item.verdict_reason
-                }));
-
-                // Далее используем mappedResults вместо resultsArray
-                const resultsWithIds = offers.map(offer => {
-                    const idx = validOffers.findIndex(o => o.id === offer.id);
-                    return idx >= 0 ? mappedResults[idx] : null;
-                });
-                setCompareResults(resultsWithIds);
             } else if (parsed && parsed.results && Array.isArray(parsed.results)) {
                 resultsArray = parsed.results;
             } else {
@@ -1130,9 +1113,23 @@ function ComparisonSection() {
                 }
             }
 
+            const mappedResults = resultsArray.map(item => {
+                if (!item) return null;
+                return {
+                    amount: item.loan_amount,
+                    term: item.term,
+                    rate: item.real_rate,
+                    monthlyPayment: item.monthly_payment,
+                    hiddenFeesTotal: item.hidden_fees_total,
+                    verdict: item.verdict,
+                    score: item.score,
+                    summary: item.verdict_reason
+                };
+            });
+
             const resultsWithIds = offers.map(offer => {
                 const idx = validOffers.findIndex(o => o.id === offer.id);
-                return idx >= 0 ? resultsArray[idx] : null;
+                return idx >= 0 ? mappedResults[idx] : null;
             });
             setCompareResults(resultsWithIds);
         } catch (e) {
@@ -1142,7 +1139,6 @@ function ComparisonSection() {
             setLoadingCompare(false);
         }
     };
-
     return (
         <Reveal>
             <div style={{ padding: "80px 20px" }}>
