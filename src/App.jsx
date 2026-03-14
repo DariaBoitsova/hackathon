@@ -1805,6 +1805,24 @@ function Footer() {
 const downloadHtml = (analysis) => {
     if (!analysis) return;
 
+    // Показываем уведомление
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: linear-gradient(135deg, #9B7BFF, #6A4E9B);
+        color: white; padding: 12px 24px;
+        border-radius: 40px; z-index: 9999; font-weight: 600;
+        border: 2px solid #B8A0FF;
+    `;
+    toast.textContent = 'Генерируем HTML...';
+    document.body.appendChild(toast);
+
+    const getVerdictClass = (verdict) => {
+        if (verdict === 'ОПАСНО') return 'danger';
+        if (verdict === 'ОСТОРОЖНО') return 'warning';
+        return 'success';
+    };
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -1812,33 +1830,56 @@ const downloadHtml = (analysis) => {
     <meta charset="UTF-8">
     <title>Анализ кредитного договора</title>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f5f0e8; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { color: #1A3A2E; }
-        .verdict { font-size: 24px; font-weight: 700; padding: 10px; border-radius: 12px; color: white; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f5f0e8; padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 4px solid #9B7BFF; }
+        h1 { color: #1A3A2E; margin-top: 0; }
+        .verdict { font-size: 24px; font-weight: 700; padding: 15px 20px; border-radius: 40px; color: white; margin-bottom: 20px; text-align: center; }
         .danger { background: #B23B3B; }
         .warning { background: #C97C3D; }
         .success { background: #2D6A4F; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .card { background: #f8f9fa; padding: 16px; border-radius: 16px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0; }
+        .card { background: #f8f9fa; padding: 16px; border-radius: 16px; border: 2px solid #9B7BFF; }
+        .card strong { color: #1A3A2E; display: block; margin-bottom: 4px; }
+        .card span { font-size: 20px; font-weight: 700; color: #1A3A2E; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: rgba(155, 123, 255, 0.3); padding: 10px; text-align: left; color: #1A3A2E; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 20px; color: white; font-size: 12px; font-weight: 600; }
+        .badge.high { background: #B23B3B; }
+        .badge.medium { background: #C97C3D; }
+        .badge.low { background: #2D6A4F; }
+        ul { margin: 10px 0; padding-left: 20px; }
+        li { margin-bottom: 5px; color: #1A3A2E; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Анализ кредитного договора</h1>
-        <div class="verdict ${analysis.verdict === 'ОПАСНО' ? 'danger' : analysis.verdict === 'ОСТОРОЖНО' ? 'warning' : 'success'}">
+        
+        <div class="verdict ${getVerdictClass(analysis.verdict)}">
             Вердикт: ${analysis.verdict}
         </div>
-        <p><strong>Причина:</strong> ${analysis.verdict_reason}</p>
+        
+        <p><strong>Причина:</strong> ${analysis.verdict_reason || '—'}</p>
         
         <h2>Параметры кредита</h2>
         <div class="grid">
-            <div class="card"><strong>Сумма:</strong> ${analysis.loan_amount || '—'}</div>
-            <div class="card"><strong>Срок:</strong> ${analysis.term || '—'} мес</div>
-            <div class="card"><strong>Ставка:</strong> ${analysis.real_rate || '—'}</div>
-            <div class="card"><strong>Платёж:</strong> ${analysis.monthly_payment || '—'}</div>
+            <div class="card">
+                <strong>Сумма кредита</strong>
+                <span>${analysis.loan_amount || '—'}</span>
+            </div>
+            <div class="card">
+                <strong>Срок (мес)</strong>
+                <span>${analysis.term || '—'}</span>
+            </div>
+            <div class="card">
+                <strong>Реальная ставка</strong>
+                <span>${analysis.real_rate || '—'}</span>
+            </div>
+            <div class="card">
+                <strong>Платёж в месяц</strong>
+                <span>${analysis.monthly_payment || '—'}</span>
+            </div>
         </div>
         
         <p><strong>Резюме:</strong> ${analysis.summary || '—'}</p>
@@ -1850,9 +1891,9 @@ const downloadHtml = (analysis) => {
             <tbody>
                 ${analysis.hidden_fees.map(fee => `
                 <tr>
-                    <td>${fee.name}</td>
-                    <td>${fee.amount}</td>
-                    <td>${fee.danger}</td>
+                    <td>${fee.name || '—'}</td>
+                    <td>${fee.amount || '—'}</td>
+                    <td><span class="badge ${fee.danger}">${fee.danger === 'high' ? 'Высокая' : fee.danger === 'medium' ? 'Средняя' : 'Низкая'}</span></td>
                     <td>${fee.explanation || ''}</td>
                 </tr>`).join('')}
             </tbody>
@@ -1866,9 +1907,9 @@ const downloadHtml = (analysis) => {
             <tbody>
                 ${analysis.traps.map(trap => `
                 <tr>
-                    <td>${trap.title}</td>
-                    <td>${trap.danger}</td>
-                    <td>${trap.description}</td>
+                    <td>${trap.title || '—'}</td>
+                    <td><span class="badge ${trap.danger}">${trap.danger === 'high' ? 'Высокая' : trap.danger === 'medium' ? 'Средняя' : 'Низкая'}</span></td>
+                    <td>${trap.description || ''}</td>
                 </tr>`).join('')}
             </tbody>
         </table>
@@ -1897,6 +1938,9 @@ const downloadHtml = (analysis) => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    // Убираем уведомление
+    setTimeout(() => document.body.removeChild(toast), 1000);
 };
 
 export default function App() {
