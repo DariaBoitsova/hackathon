@@ -32,7 +32,7 @@ const C = {
 };
 
 const API_CHAT_URL = "/api/chat";
-const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+const DEFAULT_MODEL = "mistralai/mistral-small-3.1-24b-instruct:free";
 
 const STORAGE_KEYS = {
     USERS: "chitayu_users",
