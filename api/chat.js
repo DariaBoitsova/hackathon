@@ -4,7 +4,7 @@ import Busboy from "busboy";
 
 
 const UPSTREAM_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "openrouter/hunter-alpha";
+const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 const REQUEST_TIMEOUT_MS = 600000;
 const KEY_CANDIDATES = ["DEEPSEEK_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"];
 const MAX_FILE_SIZE = 1024 * 1024;
