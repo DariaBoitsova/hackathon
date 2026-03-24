@@ -4,7 +4,7 @@ import Busboy from "busboy";
 
 
 const UPSTREAM_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "mistralai/mistral-small-3.1-24b-instruct:free";
+const DEFAULT_MODEL = "stepfun/step-3.5-flash:free";
 const REQUEST_TIMEOUT_MS = 600000;
 const KEY_CANDIDATES = ["DEEPSEEK_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"];
 const MAX_FILE_SIZE = 1024 * 1024;
