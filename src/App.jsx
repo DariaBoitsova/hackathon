@@ -2030,7 +2030,7 @@ export default function App() {
         setLoading(true);
         setAnalysis(null);
         try {
-            const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000, temperature: 0.1 });
+            const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000, temperature: 0.3 });
             const content = ai?.choices?.[0]?.message?.content || "";
             const parsed = parseJSONSafe(content) || {
                 verdict: "ОСТОРОЖНО",
