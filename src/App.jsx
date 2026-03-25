@@ -1023,7 +1023,7 @@ function AnalysisCharts({ analysis }) {
                 Визуальный анализ договора
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap: 16 }}>
                 <div style={{
                     background: '#f8f9fa',
                     borderRadius: 16,
@@ -1043,7 +1043,7 @@ function AnalysisCharts({ analysis }) {
                     }}>
                         Основные параметры
                     </h4>
-                    <ResponsiveContainer width="100%" height={200}>
+                    <ResponsiveContainer width="100%" height={window.innerWidth < 768 ? 160 : 200}>
                         <BarChart data={chartData} layout="vertical">
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" />
@@ -1274,7 +1274,7 @@ function AccordionDetails({ analysis }) {
                 border: "4px solid #9B7BFF"
             }}>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: C.darkGreen, marginBottom: 24 }}>Параметры кредита</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
+                <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 768 ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
                     {[
                         { label: "Сумма кредита", value: analysis.loan_amount },
                         { label: "Срок (мес)", value: analysis.term },
@@ -2030,7 +2030,7 @@ export default function App() {
         setLoading(true);
         setAnalysis(null);
         try {
-            const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000 });
+            const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000, temperature: 0.1 });
             const content = ai?.choices?.[0]?.message?.content || "";
             const parsed = parseJSONSafe(content) || {
                 verdict: "ОСТОРОЖНО",
