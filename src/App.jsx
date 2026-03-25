@@ -1694,17 +1694,17 @@ function ChatAssistant() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    const sendMessage = async () => {
-        if (!input.trim()) return;
-        const userMsg = { role: "user", content: input };
-        setMessages(prev => [...prev, userMsg]);
-        setInput("");
-        setIsTyping(true);
-        try {
-            const context = "";
+    const sendMessage = async (forcedText) => {
+      const textToSend = String(forcedText ?? input).trim();
+      if (!textToSend) return;
+      const userMsg = { role: "user", content: textToSend };
+      setMessages(prev => [...prev, userMsg]);
+      setInput("");
+      setIsTyping(true);
+      try {
             const ai = await groqFetch([
-                { role: "system", content: "Ты дружелюбный финансовый консультант по кредитным договорам, хорошо знающий законодательство РФ. При ответах опирайся на действующие нормы: ФЗ №353-ФЗ «О потребительском кредите (займе)», ФЗ №2300-1 «О защите прав потребителей», ГК РФ ст. 819–821, нормативы ЦБ РФ по ПСК, ФЗ №230-ФЗ «О защите прав при взыскании долгов». Если вопрос касается возможного нарушения прав заёмщика — указывай конкретную статью закона. Отвечай кратко, по делу, на русском языке. НЕ используй Markdown (символы #, *, _, ` и т.п.). Пиши обычным текстом. Не давай индивидуальных юридических консультаций — рекомендуй обращаться к юристу или в Роспотребнадзор в сложных случаях." },
-                { role: "user", content: context + "\n\n" + input }
+              { role: "system", content: "Ты дружелюбный финансовый консультант..." },
+              { role: "user", content: textToSend }
             ], { maxTokens: 800 });
             const answer = ai?.choices?.[0]?.message?.content || "Извините, не могу ответить сейчас.";
             setMessages(prev => [...prev, { role: "assistant", content: answer }]);
@@ -1761,7 +1761,7 @@ function ChatAssistant() {
                             {suggestions.map((s, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => { setInput(s); sendMessage(); }}
+                                    onClick={() => sendMessage(s)}
                                     style={{
                                         background: "rgba(155, 123, 255, 0.2)", border: `2px solid #9B7BFF`,
                                         borderRadius: 99, padding: "6px 12px", fontSize: 11,
@@ -1839,6 +1839,15 @@ function Footer() {
     );
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const downloadPdf = (analysis) => {
     if (!analysis) return;
 
@@ -1893,32 +1902,32 @@ const downloadPdf = (analysis) => {
         <h1>Анализ кредитного договора</h1>
         
         <div class="verdict ${getVerdictClass(analysis.verdict)}">
-            Вердикт: ${analysis.verdict}
+            Вердикт: ${escapeHtml(analysis.verdict)}
         </div>
-        
-        <p><strong>Причина:</strong> ${analysis.verdict_reason || '—'}</p>
+
+        <p><strong>Причина:</strong> ${escapeHtml(analysis.verdict_reason)}</p>
         
         <h2>Параметры кредита</h2>
         <div class="grid">
             <div class="card">
                 <strong>Сумма кредита</strong>
-                <span>${analysis.loan_amount || '—'}</span>
+                <span>${escapeHtml(analysis.loan_amount)}</span>
             </div>
             <div class="card">
                 <strong>Срок (мес)</strong>
-                <span>${analysis.term || '—'}</span>
+                <span>${escapeHtml(analysis.term)}</span>
             </div>
             <div class="card">
                 <strong>Реальная ставка</strong>
-                <span>${analysis.real_rate || '—'}</span>
+                <span>${escapeHtml(analysis.real_rate)}</span>
             </div>
             <div class="card">
                 <strong>Платёж в месяц</strong>
-                <span>${analysis.monthly_payment || '—'}</span>
+                <span>${escapeHtml(analysis.monthly_payment)}</span>
             </div>
         </div>
         
-        <p><strong>Резюме:</strong> ${analysis.summary || '—'}</p>
+        <p><strong>Резюме:</strong> ${escapeHtml(analysis.summary)}</p>
         
         ${analysis.hidden_fees?.length ? `
         <h2>Скрытые комиссии</h2>
@@ -1927,10 +1936,10 @@ const downloadPdf = (analysis) => {
             <tbody>
                 ${analysis.hidden_fees.map(fee => `
                 <tr>
-                    <td>${fee.name || '—'}</td>
-                    <td>${fee.amount || '—'}</td>
+                    <td>${escapeHtml(fee.name)}</td>
+                    <td>${escapeHtml(fee.amount)}</td>
                     <td><span class="badge ${fee.danger}">${fee.danger === 'high' ? 'Высокая' : fee.danger === 'medium' ? 'Средняя' : 'Низкая'}</span></td>
-                    <td>${fee.explanation || ''}</td>
+                    <td>${escapeHtml(fee.explanation)}</td>
                 </tr>`).join('')}
             </tbody>
         </table>
@@ -1943,9 +1952,9 @@ const downloadPdf = (analysis) => {
             <tbody>
                 ${analysis.traps.map(trap => `
                 <tr>
-                    <td>${trap.title || '—'}</td>
+                    <td>${escapeHtml(trap.title)}</td>
                     <td><span class="badge ${trap.danger}">${trap.danger === 'high' ? 'Высокая' : trap.danger === 'medium' ? 'Средняя' : 'Низкая'}</span></td>
-                    <td>${trap.description || ''}</td>
+                    <td>${escapeHtml(trap.description)}</td>
                 </tr>`).join('')}
             </tbody>
         </table>
