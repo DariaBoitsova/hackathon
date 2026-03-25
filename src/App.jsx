@@ -74,8 +74,9 @@ async function groqFetch(messages, config = {}) {
     const payload = {
         messages,
         model: config.model || DEFAULT_MODEL,
-        temperature: config.temperature ?? 0.2,
+        temperature: 0.1,
         max_tokens: config.maxTokens ?? 2048,
+        seed: 42,
     };
     const res = await fetchWithRetry(API_CHAT_URL, {
         method: "POST",
