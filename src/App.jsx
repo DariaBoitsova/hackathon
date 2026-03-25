@@ -349,11 +349,6 @@ function buildPrompt(text, mode = "analyze") {
 Если условие договора противоречит закону — явно указывай статью и называй это нарушением.
 Рекомендации формулируй со ссылкой на конкретную норму закона, которую можно использовать для защиты прав.
 
-Правила вердикта (следуй строго, не отступай):
-- ОПАСНО: есть хотя бы одно из — незаконные комиссии по ФЗ №353, ПСК не раскрыта, штрафы за досрочное погашение, передача долга коллекторам без согласия заёмщика, одностороннее изменение ставки банком
-- ОСТОРОЖНО: есть скрытые платежи или спорные условия, но прямых нарушений закона нет
-- НОРМАЛЬНО: никаких комиссий, ПСК раскрыта, досрочное погашение свободное, все условия прозрачны
-
 Отвечай ТОЛЬКО в формате JSON (без markdown, без \`\`\`json):
 {
   "summary": "краткое резюме договора 2-3 предложения",
@@ -2065,6 +2060,23 @@ export default function App() {
                 positive: [],
                 recommendations: []
             };
+            function calcVerdict(data) {
+                const fees = data.hidden_fees || [];
+                const traps = data.traps || [];
+                
+                const hasHighDanger = 
+                    fees.some(f => f.danger === "high") || 
+                    traps.some(t => t.danger === "high");
+                
+                const hasMediumDanger = 
+                    fees.some(f => f.danger === "medium") || 
+                    traps.some(t => t.danger === "medium");
+                
+                if (hasHighDanger) return "ОПАСНО";
+                if (hasMediumDanger) return "ОСТОРОЖНО";
+                return "НОРМАЛЬНО";
+            }
+            parsed.verdict = calcVerdict(parsed);
             setAnalysis(parsed);
             const historyEntry = {
                 id: Date.now().toString(),
