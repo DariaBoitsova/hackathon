@@ -1407,13 +1407,18 @@ function ComparisonSection() {
                 if (o.file) return readFileAsText(o.file);
                 return o.text;
             }));
-            const combined = texts.map((t, i) => `Предложение ${i + 1}:\n${t}`).join("\n\n---\n\n");
+            const combined = texts.map((t, i) => `Предложение ${i + 1}:\n${t.slice(0, 6000)}`).join("\n\n---\n\n");
             const prompt = buildPrompt(combined, "compare");
             const ai = await groqFetch(prompt, { maxTokens: 4000 });
             const content = ai?.choices?.[0]?.message?.content || "";
             console.log("Raw compare response:", content);
             const parsed = parseJSONSafe(content);
-            console.log("Parsed compare response:", parsed);
+            console.log("Parsed:", parsed);
+            ///const ai = await groqFetch(prompt, { maxTokens: 4000 });
+            ///const content = ai?.choices?.[0]?.message?.content || "";
+            ///console.log("Raw compare response:", content);
+            ///const parsed = parseJSONSafe(content);
+            ///console.log("Parsed compare response:", parsed);
 
             let resultsArray = null;
             if (parsed && Array.isArray(parsed)) {
@@ -2030,7 +2035,7 @@ export default function App() {
         setLoading(true);
         setAnalysis(null);
         try {
-            const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000 });
+            const ai = await groqFetch(buildPrompt(rawText, "analyze"), { maxTokens: 4000, temperature: 0.2 });
             const content = ai?.choices?.[0]?.message?.content || "";
             const parsed = parseJSONSafe(content) || {
                 verdict: "ОСТОРОЖНО",
