@@ -1325,7 +1325,7 @@ function AccordionDetails({ analysis }) {
                     </>
                 )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 28 }}>
+                <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", gap: 20, marginTop: 28 }}>
                     {analysis.positive?.length > 0 && (
                         <div style={{ background: C.cardBg, borderRadius: 20, padding: 28 }}>
                             <h4 style={{ fontSize: 18, fontWeight: 700, color: C.success, marginBottom: 16 }}>Что хорошего</h4>
