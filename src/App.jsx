@@ -333,8 +333,20 @@ function buildPrompt(text, mode = "analyze") {
         return [
             {
                 role: "system",
-                content: `Ты — эксперт по финансовым договорам и защите прав потребителей. 
-Твоя задача — анализировать кредитные договоры и объяснять их содержание простым языком без юридических терминов.
+                content: `Ты — эксперт по финансовым договорам и защите прав потребителей в России.
+Твоя задача — анализировать кредитные договоры, опираясь на действующее законодательство РФ, и объяснять содержание простым языком.
+
+При анализе ОБЯЗАТЕЛЬНО руководствуйся следующими нормами:
+- ФЗ №353-ФЗ «О потребительском кредите (займе)»: соблюдение формы договора, раскрытие ПСК в квадратной рамке на первой странице (ст. 6), право заёмщика на отказ от навязанных страховок и услуг (ст. 7), право на досрочное погашение без штрафов (ст. 11), запрет комиссий за выдачу кредита
+- ФЗ №102-ФЗ «Об ипотеке (залоге недвижимости)» — для ипотечных договоров
+- ГК РФ ст. 819–821: общие требования к кредитному договору, ничтожность условий, ущемляющих права потребителя
+- ФЗ №2300-1 «О защите прав потребителей» ст. 16: недействительность условий, ущемляющих права потребителя по сравнению с законом
+- ФЗ №395-1 «О банках и банковской деятельности»: обязанности кредитора по раскрытию информации
+- Нормативы ЦБ РФ: предельные значения ПСК (публикуются ежеквартально), требования к расчёту полной стоимости кредита
+- ФЗ №230-ФЗ «О защите прав при осуществлении деятельности по возврату долгов»: условия уступки прав требования коллекторам
+
+Если условие договора противоречит закону — явно указывай статью и называй это нарушением.
+Рекомендации формулируй со ссылкой на конкретную норму закона, которую можно использовать для защиты прав.
 
 Отвечай ТОЛЬКО в формате JSON (без markdown, без \`\`\`json):
 {
@@ -344,15 +356,15 @@ function buildPrompt(text, mode = "analyze") {
   "term": "срок кредита",
   "monthly_payment": "ежемесячный платёж если указан",
   "hidden_fees": [
-    { "name": "название комиссии/платежа", "amount": "сумма или %", "danger": "high|medium|low", "explanation": "объяснение простым языком" }
+    { "name": "название комиссии/платежа", "amount": "сумма или %", "danger": "high|medium|low", "explanation": "объяснение с указанием нормы закона РФ, если комиссия незаконна" }
   ],
   "traps": [
-    { "title": "название ловушки", "danger": "high|medium|low", "description": "что это значит для заёмщика простым языком" }
+    { "title": "название ловушки", "danger": "high|medium|low", "description": "что это значит для заёмщика; ссылка на норму закона РФ если условие нарушает права" }
   ],
   "positive": [ "что хорошего в договоре" ],
   "verdict": "ОПАСНО|ОСТОРОЖНО|НОРМАЛЬНО",
   "verdict_reason": "почему такой вердикт, 1-2 предложения",
-  "recommendations": [ "конкретная рекомендация заёмщику" ]
+  "recommendations": [ "конкретная рекомендация со ссылкой на закон РФ" ]
 }`,
             },
             { role: "user", content: text.slice(0, 30000) }
@@ -362,7 +374,18 @@ function buildPrompt(text, mode = "analyze") {
         return [
             {
                 role: "system",
-                content: `Ты финансовый аналитик. Проанализируй несколько кредитных предложений, которые будут приведены ниже. Каждое предложение отделено разделителем "---". Для каждого предложения верни JSON-объект с подробными характеристиками. Итоговый ответ должен быть JSON-массивом объектов, где каждый объект соответствует одному предложению в том же порядке, в котором они приведены.
+                content: `Ты — финансовый аналитик, специализирующийся на законодательстве РФ в области потребительского кредитования.
+Проанализируй несколько кредитных предложений, которые будут приведены ниже. Каждое отделено разделителем "---".
+Для каждого предложения верни JSON-объект. Итоговый ответ — JSON-массив в том же порядке.
+
+При оценке обязательно учитывай нормы российского законодательства:
+- ФЗ №353-ФЗ: наличие ПСК в квадратной рамке, отсутствие незаконных комиссий за выдачу, право на досрочное погашение без санкций (ст. 11), условия навязанного страхования (ст. 7)
+- ФЗ №2300-1 «О защите прав потребителей» ст. 16: условия, ущемляющие права заёмщика
+- ГК РФ ст. 819–821: недействительные условия кредитного договора
+- Нормативы ЦБ РФ: соответствие ПСК предельным значениям на дату заключения
+- ФЗ №230-ФЗ: наличие условий об уступке долга коллекторам
+
+Понижай оценку (score) если: ПСК не раскрыта, есть незаконные комиссии, права на досрочное погашение ограничены, навязано страхование без права отказа.
 
 Формат объекта для каждого предложения:
 {
@@ -377,8 +400,9 @@ function buildPrompt(text, mode = "analyze") {
   "hidden_fees": [{ "name": "название", "amount": "сумма или %", "danger": "high|medium|low" }],
   "traps_count": число,
   "biggest_trap": "самая опасная ловушка одним предложением или 'нет критичных'",
+  "legal_violations": "нарушения законодательства РФ или 'не выявлено'",
   "verdict": "ОПАСНО|ОСТОРОЖНО|НОРМАЛЬНО",
-  "verdict_reason": "почему такой вердикт, 1-2 предложения",
+  "verdict_reason": "почему такой вердикт со ссылкой на нормы РФ, 1-2 предложения",
   "score": число от 1 до 10,
   "recommendation": "брать или не брать — коротко и честно одним предложением"
 }
@@ -605,18 +629,16 @@ function Navbar({ user, onLogout, onAuthClick, historyCount }) {
     }, []);
 
     return (
-        <Reveal>
-            <div style={{
-                position: "sticky", top: 0, zIndex: 100,
-                height: 80, background: "rgba(26,58,46,0.88)",
-                backdropFilter: "blur(14px)", borderBottom: `4px solid #9B7BFF`,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "0 32px"
-            }}>
+        <div style={{
+            position: "sticky", top: 0, zIndex: 100,
+            height: 80, background: "rgba(26,58,46,0.88)",
+            backdropFilter: "blur(14px)", borderBottom: `4px solid #9B7BFF`,
+        }}>
+            <div className="navbar-inner">
                 <div style={{ fontSize: 24, fontWeight: 600, color: C.textLight, letterSpacing: "-0.5px" }}>
                     Читаю за тебя
                 </div>
-                <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+                <div className="navbar-actions">
                     {historyCount > 0 && (
                         <div style={{ position: "relative" }} ref={dropdownRef}>
                             <button
@@ -628,7 +650,7 @@ function Navbar({ user, onLogout, onAuthClick, historyCount }) {
                                     cursor: "pointer"
                                 }}
                             >
-                                <span>📋</span> История ({historyCount})
+                                <span>📋</span> <span className="navbar-history-label">История ({historyCount})</span>
                             </button>
                             {showDropdown && (
                                 <div style={{
@@ -688,19 +710,15 @@ function Navbar({ user, onLogout, onAuthClick, historyCount }) {
                     )}
                 </div>
             </div>
-        </Reveal>
+        </div>
     );
 }
 
 function Hero() {
     return (
         <Reveal>
-            <div style={{
-                minHeight: "calc(100vh - 80px)",
-                display: "grid", gridTemplateColumns: "60% 40%", gap: 48,
-                padding: "60px 20px", alignItems: "center"
-            }}>
-                <div style={{
+            <div className="hero-grid">
+                <div className="hero-card" style={{
                     background: C.heroBg, borderRadius: 24, padding: 48,
                     opacity: 0.94,
                     border: "4px solid #9B7BFF"
@@ -714,19 +732,19 @@ function Hero() {
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.success }}></span>
                         <span style={{ fontSize: 13, color: C.darkGreen }}>AI-анализ за секунды</span>
                     </div>
-                    <h1 style={{
+                    <h1 className="hero-title" style={{
                         fontSize: 48, fontWeight: 700, color: C.darkGreen,
                         lineHeight: 1.15, letterSpacing: "-1.2px", margin: "0 0 24px"
                     }}>
                         Разберитесь в кредитном договоре <br />с помощью ИИ
                     </h1>
-                    <p style={{
+                    <p className="hero-subtitle" style={{
                         fontSize: 20, color: C.darkGreen, opacity: 0.8,
                         lineHeight: 1.6, marginBottom: 32
                     }}>
                         Загрузите договор, и нейросеть укажет на скрытые комиссии, ловушки и риски.
                     </p>
-                    <div style={{ display: "flex", gap: 16 }}>
+                    <div className="hero-buttons" style={{ display: "flex", gap: 16 }}>
                         <button style={{
                             background: C.lavenderGradient, color: C.white,
                             border: "none", borderRadius: 40, padding: "16px 32px",
@@ -747,7 +765,7 @@ function Hero() {
                         >Задать вопрос ассистенту</button>
                     </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "center" }}>
+                <div className="hero-illustration">
                     <BoyReading reading={false} size={280} />
                 </div>
             </div>
@@ -795,12 +813,13 @@ function FileUpload({ onFileSelect, onTextChange, text, error, analyzing }) {
     };
 
     return (
-        <div style={{
+        <div className="file-upload-card" style={{
             maxWidth: 600, margin: "0 auto", background: C.cardBg,
             borderRadius: 24, padding: 32,
             border: "4px solid #9B7BFF"
         }}>
             <div
+                className="file-drop-zone"
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -1443,11 +1462,11 @@ function ComparisonSection() {
 
     return (
         <Reveal>
-            <div style={{ padding: "80px 20px" }}>
+            <div className="comparison-section-pad">
                 <h2 style={{ fontSize: 32, fontWeight: 700, color: C.textLight, marginBottom: 8 }}>Сравнение предложений</h2>
                 <p style={{ fontSize: 16, color: C.textMuted, marginBottom: 32 }}>Загрузите до 4 договоров для сравнения</p>
 
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${offers.length}, 1fr)`, gap: 16 }}>
+                <div className="compare-offers-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${offers.length}, 1fr)`, gap: 16 }}>
                     {offers.map((offer) => (
                         <div key={offer.id} style={{
                             background: "rgba(255,255,255,0.07)", border: `4px solid #9B7BFF`,
@@ -1528,7 +1547,7 @@ function ComparisonSection() {
                                     width: "100%", marginTop: 12, padding: 8,
                                     background: "rgba(155, 123, 255, 0.1)", border: `2px solid #9B7BFF`,
                                     borderRadius: 10, color: C.textLight, fontSize: 12,
-                                    resize: "vertical", outline: "none"
+                                    resize: "vertical", outline: "none", boxSizing: "border-box"
                                 }}
                             />
 
@@ -1674,7 +1693,7 @@ function ChatAssistant() {
         try {
             const context = "";
             const ai = await groqFetch([
-                { role: "system", content: "Ты дружелюбный финансовый консультант. Отвечай кратко, по делу, без юридических советов. На русском. НЕ используй Markdown (символы #, *, _, ` и т.п.). Пиши обычным текстом." },
+                { role: "system", content: "Ты дружелюбный финансовый консультант по кредитным договорам, хорошо знающий законодательство РФ. При ответах опирайся на действующие нормы: ФЗ №353-ФЗ «О потребительском кредите (займе)», ФЗ №2300-1 «О защите прав потребителей», ГК РФ ст. 819–821, нормативы ЦБ РФ по ПСК, ФЗ №230-ФЗ «О защите прав при взыскании долгов». Если вопрос касается возможного нарушения прав заёмщика — указывай конкретную статью закона. Отвечай кратко, по делу, на русском языке. НЕ используй Markdown (символы #, *, _, ` и т.п.). Пиши обычным текстом. Не давай индивидуальных юридических консультаций — рекомендуй обращаться к юристу или в Роспотребнадзор в сложных случаях." },
                 { role: "user", content: context + "\n\n" + input }
             ], { maxTokens: 800 });
             const answer = ai?.choices?.[0]?.message?.content || "Извините, не могу ответить сейчас.";
@@ -1689,13 +1708,7 @@ function ChatAssistant() {
     return (
         <>
             {isOpen && (
-                <div style={{
-                    position: "fixed", bottom: 104, right: 32,
-                    width: 360, height: 520, background: C.cardBg,
-                    borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-                    zIndex: 200, display: "flex", flexDirection: "column",
-                    border: "4px solid #9B7BFF"
-                }}>
+                <div className="chat-widget">
                     <div style={{
                         background: C.lavenderGradient, padding: "16px 20px",
                         borderTopLeftRadius: 16, borderTopRightRadius: 16,
@@ -1777,14 +1790,14 @@ function ChatAssistant() {
             )}
 
             <button
+                className="chat-fab"
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    position: "fixed", bottom: 32, right: 32,
                     width: 60, height: 60, borderRadius: "50%",
                     background: C.lavenderGradient, border: "none",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
                     cursor: "pointer", display: "flex", alignItems: "center",
-                    justifyContent: "center", zIndex: 150,
+                    justifyContent: "center", zIndex: 201,
                     animation: "chatPulse 3s ease-in-out infinite"
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
@@ -2055,10 +2068,18 @@ export default function App() {
             minHeight: "100vh",
             background: `linear-gradient(135deg, ${C.bgStart}, ${C.bgEnd})`,
             color: C.textLight,
-            fontFamily: "'Plus Jakarta Sans', sans-serif"
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            overflowX: "hidden",
+            width: "100%"
         }}>
             <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        html { overflow-x: hidden; scrollbar-gutter: stable; }
+        body { overflow-x: hidden; }
+
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes chatBounce {
           0%, 80%, 100% { transform: translateY(0); }
@@ -2073,6 +2094,102 @@ export default function App() {
           70% { box-shadow: 0 0 0 20px rgba(155, 123, 255, 0); }
           100% { box-shadow: 0 0 0 0 rgba(155, 123, 255, 0); }
         }
+
+        /* ─── Hero ─── */
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 60% 40%;
+          gap: 48px;
+          padding: 60px 20px;
+          align-items: center;
+          min-height: calc(100vh - 80px);
+        }
+        .hero-illustration { display: flex; justify-content: center; }
+
+        /* ─── Navbar ─── */
+        .navbar-inner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 32px;
+          height: 100%;
+        }
+        .navbar-actions { display: flex; gap: 24px; align-items: center; }
+        .navbar-auth-text { display: inline; }
+
+        /* ─── Comparison ─── */
+        .compare-offers-grid { display: grid; gap: 16px; }
+
+        /* ─── Chat widget ─── */
+        .chat-widget {
+          position: fixed;
+          bottom: 104px;
+          right: 32px;
+          width: 360px;
+          height: 520px;
+          background: #F5F0E8;
+          border-radius: 20px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+          z-index: 200;
+          display: flex;
+          flex-direction: column;
+          border: 4px solid #9B7BFF;
+        }
+        .chat-fab {
+          position: fixed;
+          bottom: 32px;
+          right: 32px;
+          z-index: 201;
+        }
+
+        /* ─── Section padding ─── */
+        .section-pad { padding: 20px 20px 40px; }
+        .section-pad-bottom { padding: 0 20px 80px; }
+        .comparison-section-pad { padding: 80px 20px; }
+
+        /* ─── Mobile ─── */
+        @media (max-width: 768px) {
+          .hero-grid {
+            grid-template-columns: 1fr;
+            padding: 28px 16px 36px;
+            min-height: auto;
+            gap: 0;
+          }
+          .hero-illustration { display: none; }
+          .hero-card { padding: 28px 20px !important; }
+          .hero-title { font-size: 30px !important; letter-spacing: -0.5px !important; }
+          .hero-subtitle { font-size: 16px !important; }
+          .hero-buttons { flex-direction: column !important; gap: 10px !important; }
+          .hero-buttons button { width: 100% !important; text-align: center !important; padding: 14px 20px !important; }
+
+          .navbar-inner { padding: 0 16px; }
+          .navbar-auth-text { display: none; }
+          .navbar-history-label { display: none; }
+
+          .compare-offers-grid { grid-template-columns: 1fr !important; }
+
+          .chat-widget {
+            right: 8px;
+            bottom: 84px;
+            width: calc(100vw - 16px);
+            height: 70vh;
+            max-height: 520px;
+          }
+          .chat-fab {
+            bottom: 16px;
+            right: 16px;
+          }
+
+          .section-pad { padding: 16px 12px 28px; }
+          .section-pad-bottom { padding: 0 12px 48px; }
+          .comparison-section-pad { padding: 48px 12px; }
+
+          .file-upload-card { padding: 20px !important; }
+          .file-drop-zone { padding: 28px 12px !important; }
+
+          .verdict-card { padding: 20px !important; }
+          .analysis-charts { flex-direction: column !important; }
+        }
       `}</style>
 
             <Navbar
@@ -2085,7 +2202,7 @@ export default function App() {
             <Hero />
 
             <Reveal>
-                <div style={{ padding: "20px 20px 40px" }}>
+                <div className="section-pad">
                     <FileUpload
                         onFileSelect={handleFileSelect}
                         onTextChange={setRawText}
@@ -2115,7 +2232,7 @@ export default function App() {
 
             {analysis && !loading && (
                 <Reveal>
-                    <div style={{ padding: "0 20px 80px" }}>
+                    <div className="section-pad-bottom">
                         <VerdictCard
                             analysis={analysis}
                             onToggleDetails={() => setShowDetails(!showDetails)}
