@@ -1,0 +1,25 @@
+/* ─── Global reset to prevent layout shake / overflow ─── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  /* Keeps scrollbar space reserved so content doesn't shift */
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%; /* Prevent iOS font inflation */
+}
+
+/* Prevent horizontal bleed from absolutely-positioned children */
+#root {
+  overflow-x: hidden;
+  width: 100%;
+}
